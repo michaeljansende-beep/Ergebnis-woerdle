@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Wördle - Lina vs. Papa</title>
+  <style>
+    :root{
+      --accent:#f59e0b;--border:#e5e7eb;--bg:#f8fafc;--text:#111827;--muted:#6b7280;
+      --ok:#16a34a;--danger:#dc2626;--radius:14px;
+      --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:var(--font);background:#fff;color:var(--text);}
+    header{padding:16px;border-bottom:1px solid var(--border);}
+    .wrap{max-width:980px;margin:0 auto;padding:16px;}
+    h1{margin:0;font-size:20px;}
+    .subtitle{color:var(--muted);font-size:13px;margin-top:6px;}
+    .grid{display:grid;grid-template-columns:1fr;gap:14px;align-items:start;}
+    @media (min-width:900px){.grid{grid-template-columns:1fr 1fr;}}
+    .card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:14px;}
+    h2{margin:0 0 10px 0;font-size:16px;}
+
+    .form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
+    @media (max-width:700px){.form{grid-template-columns:1fr;}}
+    label{display:block;font-size:12px;color:var(--muted);margin:0 0 6px 0;}
+    input,select,button{width:100%;min-width:0;padding:10px;border-radius:12px;border:1px solid var(--border);font-family:var(--font);}
+    input,select{background:#fff;}
+    button{font-weight:800;cursor:pointer;white-space:nowrap;}
+    .btnPrimary{background:var(--accent);border:0;color:#fff;}
+    .btnCloud{background:#fff;border:1px solid rgba(245,158,11,.55);}
+    .btnDanger{background:#fff;border:1px solid rgba(220,38,38,.35);color:var(--danger);}
+    .actions{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px;}
+    .status{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.35;}
+    .status .ok{color:var(--ok);font-weight:900;}
+    .status .bad{color:var(--danger);font-weight:900;}
+
+    table{width:100%;border-collapse:collapse;margin-top:10px;background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+    th,td{border-bottom:1px solid var(--border);padding:8px;font-size:14px;}
+    th{text-align:left;color:var(--muted);font-size:12px;background:#fafafa;}
+    tr:last-child td{border-bottom:0}
+    .right{text-align:right;}
+
+    .summary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;}
+    @media (max-width:520px){.summary{grid-template-columns:1fr}}
+    .pill{background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px;}
+    .pill .k{font-size:12px;color:var(--muted);}
+    .pill .v{font-size:22px;font-weight:900;margin-top:4px;}
+    .pill .s{font-size:12px;color:var(--muted);margin-top:2px;}
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>Wördle - Lina vs. Papa</h1>
+    <div class="subtitle">1-6 Versuche, 7 = nicht geschafft - Geräteübergreifend per Google Sheet</div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="grid">
+    <section class="card">
+      <h2>Eintrag</h2>
+
+      <div class="form">
+        <div>
+          <label for="date">Datum</label>
+          <input type="date" id="date" />
+        </div>
+        <div>
+          <label for="player">Spieler</label>
+          <select id="player">
+            <option>Lina</option>
+            <option>Papa</option>
+          </select>
+        </div>
+        <div>
+          <label for="score">Ergebnis</label>
+          <select id="score">
+            <option>1</option><option>2</option><option>3</option>
+            <option>4</option><option>5</option><option>6</option>
+            <option>7</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btnPrimary" id="saveLocal">Speichern (lokal)</button>
+        <button class="btnCloud" id="cloudSend">Cloud senden</button>
+        <button class="btnCloud" id="cloudLoad">Cloud holen</button>
+        <button class="btnDanger" id="reset">Alles löschen (lokal)</button>
+      </div>
+
+      <div class="status" id="cloudStatus">Cloud: —</div>
+
+      <div class="summary">
+        <div class="pill">
+          <div class="k">Lina - Summe</div>
+          <div class="v" id="sumL">0</div>
+          <div class="s"><span id="daysL">0</span> Tage - Ø <span id="avgL">0,00</span></div>
+        </div>
+        <div class="pill">
+          <div class="k">Papa - Summe</div>
+          <div class="v" id="sumP">0</div>
+          <div class="s"><span id="daysP">0</span> Tage - Ø <span id="avgP">0,00</span></div>
+        </div>
+      </div>
+      <div class="status" id="leader">Aktuell vorne: —</div>
+    </section>
+
+    <section class="card">
+      <h2>Übersicht</h2>
+      <table>
+        <thead>
+          <tr><th>Datum</th><th class="right">Lina</th><th class="right">Papa</th></tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </section>
+  </div>
+</main>
+
+<script>
+const CLOUD_URL = "https://script.google.com/macros/s/AKfycbyX4JdV2kQtRYFGB4cyBwiBIMH2nTStPKeW9HCh3X639jHvFFk0qBFrmVT0dJeq-5g5Mw/exec";
+const CLOUD_KEY = "woerdle2025";
+const LS_KEY = "woerdle_entries_v5";
+
+const $ = (id) => document.getElementById(id);
+const dateEl = $("date");
+const playerEl = $("player");
+const scoreEl = $("score");
+const rowsEl = $("rows");
+const cloudStatus = $("cloudStatus");
+const sumL = $("sumL"), sumP = $("sumP"), daysL = $("daysL"), daysP = $("daysP"), avgL = $("avgL"), avgP = $("avgP"), leader = $("leader");
+
+dateEl.valueAsDate = new Date();
+let entries = load();
+
+$("saveLocal").onclick = () => {
+  const now = Date.now();
+  const e = {date: dateEl.value, player: playerEl.value, score: Number(scoreEl.value), ts: now, syncedTs: 0};
+  upsertLocal(e);
+  renderAll();
+  setStatus(null, "lokal gespeichert");
+};
+
+$("cloudLoad").onclick = async () => {
+  try {
+    const list = await cloudList();
+    const now = Date.now();
+    const normalized = (list||[]).map(x => ({
+      date: x.date, player: x.player, score: Number(x.score||0),
+      ts: Number(x.ts||now), syncedTs: now
+    }));
+    entries = mergeAll(entries, normalized);
+    persist();
+    renderAll();
+    setStatus(true, "geladen");
+  } catch(err) {
+    setStatus(false, humanErr(err));
+  }
+};
+
+$("cloudSend").onclick = async () => {
+  try {
+    const pending = entries.filter(e => !e.syncedTs || e.syncedTs < e.ts);
+    if (pending.length === 0) {
+      setStatus(true, "nichts zu senden");
+      return;
+    }
+    setStatus(null, "sende " + pending.length + "…");
+    for (const e of pending) {
+      await cloudUpsertGet(e);
+      e.syncedTs = Date.now();
+    }
+    persist();
+    setStatus(true, "gesendet (" + pending.length + ")");
+  } catch(err) {
+    setStatus(false, humanErr(err));
+  }
+};
+
+$("reset").onclick = () => {
+  if (confirm("Lokale Daten löschen? (Cloud bleibt unverändert)")) {
+    entries = [];
+    persist();
+    renderAll();
+    setStatus(null, "bereit");
+  }
+};
+
+function setStatus(ok, msg) {
+  if (ok === true) cloudStatus.innerHTML = 'Cloud: <span class="ok">' + escapeHtml(msg) + '</span>';
+  else if (ok === false) cloudStatus.innerHTML = 'Cloud: <span class="bad">Fehler</span> - ' + escapeHtml(msg);
+  else cloudStatus.textContent = "Cloud: " + msg;
+}
+
+function upsertLocal(e) {
+  const i = entries.findIndex(x => x.date === e.date && x.player === e.player);
+  if (i >= 0) {
+    const prev = entries[i];
+    entries[i] = {...prev, ...e};
+  } else {
+    entries.push(e);
+  }
+  persist();
+}
+
+function mergeAll(a, b) {
+  const out = [...a];
+  for (const e of b) {
+    const i = out.findIndex(x => x.date === e.date && x.player === e.player);
+    if (i >= 0) {
+      if (Number(e.ts||0) >= Number(out[i].ts||0)) out[i] = {...out[i], ...e};
+    } else out.push(e);
+  }
+  return out;
+}
+
+function renderAll() { renderTable(); renderTotals(); }
+
+function renderTable() {
+  rowsEl.innerHTML = "";
+  const map = {};
+  for (const e of entries) {
+    map[e.date] = map[e.date] || {};
+    map[e.date][e.player] = e.score;
+  }
+  Object.keys(map).sort().reverse().forEach(d => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${escapeHtml(d)}</td>
+      <td class="right">${escapeHtml(map[d].Lina ?? "")}</td>
+      <td class="right">${escapeHtml(map[d].Papa ?? "")}</td>`;
+    rowsEl.appendChild(tr);
+  });
+}
+
+function renderTotals() {
+  let sL=0,sP=0,cL=0,cP=0;
+  for (const e of entries) {
+    if (e.player === "Lina") { sL += Number(e.score||0); cL++; }
+    if (e.player === "Papa") { sP += Number(e.score||0); cP++; }
+  }
+  sumL.textContent = String(sL);
+  sumP.textContent = String(sP);
+  daysL.textContent = String(cL);
+  daysP.textContent = String(cP);
+  avgL.textContent = (cL ? (sL/cL) : 0).toFixed(2).replace(".", ",");
+  avgP.textContent = (cP ? (sP/cP) : 0).toFixed(2).replace(".", ",");
+
+  if (cL===0 && cP===0) leader.textContent = "Aktuell vorne: —";
+  else if (sL < sP) leader.textContent = "Aktuell vorne: Lina (niedrigere Summe ist besser)";
+  else if (sP < sL) leader.textContent = "Aktuell vorne: Papa (niedrigere Summe ist besser)";
+  else leader.textContent = "Aktuell: Gleichstand";
+}
+
+function persist() { localStorage.setItem(LS_KEY, JSON.stringify(entries)); }
+function load() { try { return JSON.parse(localStorage.getItem(LS_KEY) || "[]"); } catch { return []; } }
+
+async function cloudList() {
+  const url = CLOUD_URL + "?action=list&key=" + encodeURIComponent(CLOUD_KEY) + "&_=" + Date.now();
+  const r = await fetch(url, {method:"GET"});
+  const text = await r.text();
+  if (!r.ok) throw new Error("HTTP " + r.status + " " + text.slice(0,160));
+  const j = JSON.parse(text);
+  if (!j.ok) throw new Error(j.error || "cloud_error");
+  return j.entries || [];
+}
+
+async function cloudUpsertGet(e) {
+  const url = CLOUD_URL
+    + "?action=upsert_get"
+    + "&key=" + encodeURIComponent(CLOUD_KEY)
+    + "&date=" + encodeURIComponent(e.date)
+    + "&player=" + encodeURIComponent(e.player)
+    + "&score=" + encodeURIComponent(String(e.score))
+    + "&ts=" + encodeURIComponent(String(e.ts || Date.now()))
+    + "&_=" + Date.now();
+  const r = await fetch(url, {method:"GET"});
+  const text = await r.text();
+  if (!r.ok) throw new Error("HTTP " + r.status + " " + text.slice(0,160));
+  const j = JSON.parse(text);
+  if (!j.ok) throw new Error(j.error || "cloud_error");
+  return true;
+}
+
+function humanErr(err) {
+  const s = String(err && err.message ? err.message : err);
+  if (s.includes("Failed to fetch") || s.includes("Load failed")) return "Load failed (Safari)";
+  return s.slice(0,180);
+}
+
+function escapeHtml(v) {
+  return String(v).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");
+}
+
+renderAll();
+setStatus(null, "bereit");
+</script>
+</body>
+</html>
