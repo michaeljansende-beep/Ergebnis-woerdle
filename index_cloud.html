@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Wördle - Lina vs. Papa</title>
+  <style>
+    :root{
+      --bg:#ffffff;
+      --text:#111827;
+      --muted:#6b7280;
+      --card:#f9fafb;
+      --border:#e5e7eb;
+      --accent:#f59e0b;
+      --accent2:#111827;
+      --danger:#dc2626;
+      --ok:#16a34a;
+      --shadow: 0 8px 24px rgba(17,24,39,.08);
+      --radius: 14px;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.25;}
+    header{padding:18px 16px 10px;border-bottom:1px solid var(--border);position:sticky;top:0;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);z-index:10;}
+    .wrap{max-width:980px;margin:0 auto;padding:16px;}
+    .title{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+    h1{font-size:20px;margin:0;letter-spacing:.2px;}
+    .subtitle{margin-top:6px;color:var(--muted);font-size:13px;}
+    .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:14px;align-items:start;}
+    @media (max-width:860px){.grid{grid-template-columns:1fr}}
+
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);}
+    .card h2{font-size:14px;margin:0 0 10px 0;color:var(--accent2);letter-spacing:.2px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+    .pill{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border);background:#fff;padding:8px 10px;border-radius:999px;font-size:12px;color:var(--muted);white-space:nowrap;}
+    @media (max-width:520px){
+      .pill{font-size:11px;padding:6px 8px;}
+      .card h2{justify-content:flex-start;}
+    }
+
+    .scoreRow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;}
+    .scoreBox{background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+    .scoreName{font-weight:700;font-size:13px;}
+    .scoreVal{font-weight:800;font-size:22px;letter-spacing:.2px;flex-shrink:0;}
+    .leader{margin-top:10px;font-size:13px;color:var(--muted);}
+    .leader b{color:var(--text)}
+
+    .form{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+    @media (max-width:520px){.form{grid-template-columns:1fr}}
+
+    label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;}
+    input,select,button{width:100%;font-family:var(--font);}
+    input,select{padding:11px 12px;border:1px solid var(--border);border-radius:12px;background:#fff;font-size:14px;outline:none;}
+    input:focus,select:focus{border-color:rgba(245,158,11,.6);box-shadow:0 0 0 4px rgba(245,158,11,.16);}
+
+    .actions{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;}
+    button{border:0;border-radius:12px;padding:11px 12px;font-size:14px;font-weight:700;cursor:pointer;}
+    .btnPrimary{background:var(--accent);color:#111827;}
+    .btnSecondary{background:#fff;border:1px solid var(--border);color:var(--text);font-weight:700;}
+    .btnDanger{background:#fff;border:1px solid rgba(220,38,38,.35);color:var(--danger);}
+    .btnCloud{background:#fff;border:1px solid rgba(245,158,11,.55);color:#111827;}
+
+    .hint{margin-top:10px;font-size:12px;color:var(--muted);}
+
+    table{width:100%;border-collapse:separate;border-spacing:0;overflow:hidden;border-radius:12px;border:1px solid var(--border);background:#fff;}
+    thead th{text-align:left;font-size:12px;color:var(--muted);padding:10px 10px;border-bottom:1px solid var(--border);background:#fafafa;position:sticky;top:0;z-index:1;}
+    tbody td{padding:10px 10px;border-bottom:1px solid var(--border);font-size:14px;}
+    tbody tr:last-child td{border-bottom:0}
+    .tdCenter{text-align:center}
+    .badge{display:inline-flex;align-items:center;justify-content:center;min-width:26px;padding:4px 8px;border-radius:999px;border:1px solid var(--border);font-weight:800;background:#fff;}
+    .badge.fail{border-color:rgba(220,38,38,.35);color:var(--danger);background:rgba(220,38,38,.06);}
+    .badge.ok{border-color:rgba(22,163,74,.25);color:var(--ok);background:rgba(22,163,74,.06);}
+    .empty{color:var(--muted);font-size:13px;padding:8px 2px 0;}
+
+    .modalBack{position:fixed;inset:0;background:rgba(17,24,39,.55);display:none;align-items:center;justify-content:center;padding:16px;z-index:999;}
+    .modal{width:min(560px,100%);background:#fff;border-radius:16px;border:1px solid var(--border);box-shadow:0 14px 46px rgba(0,0,0,.2);overflow:hidden;}
+    .modalHead{padding:14px 14px 10px;border-bottom:1px solid var(--border);background:#fafafa;}
+    .modalHead b{display:block;font-size:14px}
+    .modalBody{padding:14px;font-size:13px;color:var(--muted);}
+    .modalBody .strong{color:var(--text);font-weight:800;}
+    .modalActions{padding:12px 14px 14px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;}
+
+    .toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:rgba(17,24,39,.92);color:#fff;padding:10px 12px;border-radius:999px;font-size:13px;display:none;z-index:1000;max-width:calc(100% - 32px);text-align:center;}
+    .mini{font-size:12px;color:var(--muted);margin-top:8px;}
+    .kpis{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+    .kpi{background:#fff;border:1px solid var(--border);border-radius:999px;padding:8px 10px;font-size:12px;color:var(--muted);}
+
+    .cloudStatusDot{
+      width:10px;height:10px;border-radius:999px;border:1px solid var(--border);
+      background:#e5e7eb; display:inline-block;
+    }
+    .dotOk{background: rgba(22,163,74,.9); border-color: rgba(22,163,74,.9);}
+    .dotWarn{background: rgba(245,158,11,.95); border-color: rgba(245,158,11,.95);}
+    .dotBad{background: rgba(220,38,38,.9); border-color: rgba(220,38,38,.9);}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="title">
+        <div>
+          <h1>Wördle - Lina vs. Papa</h1>
+          <div class="subtitle">Tägliche Ergebnisse eintragen (1-6) - bei "nicht geschafft" 7. Neueste Einträge oben, Duplikate pro Datum/Spieler werden abgefangen.</div>
+        </div>
+        <div class="pill" id="cloudPill"><span class="cloudStatusDot" id="cloudDot"></span><span id="cloudText">Cloud: nicht verbunden</span></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="grid">
+      <section class="card">
+        <h2>
+          Eintrag hinzufügen
+          <span class="pill" id="todayPill">Heute</span>
+        </h2>
+
+        <div class="form">
+          <div>
+            <label for="date">Datum</label>
+            <input type="date" id="date" />
+          </div>
+
+          <div>
+            <label for="player">Spieler</label>
+            <select id="player">
+              <option value="Lina">Lina</option>
+              <option value="Papa">Papa</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="score">Ergebnis</label>
+            <select id="score">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+              <option value="7">7 (nicht geschafft)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btnPrimary" id="saveBtn">Speichern</button>
+          <button class="btnCloud" id="syncBtn">Cloud synchronisieren</button>
+          <button class="btnSecondary" id="exportBtn">Export (CSV)</button>
+          <button class="btnDanger" id="resetBtn">Alles löschen</button>
+        </div>
+
+        <div class="hint">
+          Cloud-Variante: Google Sheet Sync (geräteübergreifend). Lokal bleibt als Offline-Cache gespeichert.
+        </div>
+
+        <div class="kpis" id="kpis"></div>
+        <div class="mini" id="lastSaved"></div>
+      </section>
+
+      <section class="card">
+        <h2>Aktueller Stand</h2>
+
+        <div class="scoreRow">
+          <div class="scoreBox">
+            <div>
+              <div class="scoreName">Lina</div>
+              <div class="mini" id="linaCount">0 Tage</div>
+            </div>
+            <div class="scoreVal" id="linaTotal">0</div>
+          </div>
+          <div class="scoreBox">
+            <div>
+              <div class="scoreName">Papa</div>
+              <div class="mini" id="papaCount">0 Tage</div>
+            </div>
+            <div class="scoreVal" id="papaTotal">0</div>
+          </div>
+        </div>
+
+        <div class="leader" id="leaderLine">Noch keine Einträge.</div>
+
+        <div style="margin-top:12px; max-height: 420px; overflow:auto; border-radius:12px;">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:38%;">Datum</th>
+                <th class="tdCenter" style="width:31%;">Lina</th>
+                <th class="tdCenter" style="width:31%;">Papa</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+        <div class="empty" id="emptyMsg"></div>
+      </section>
+    </div>
+  </main>
+
+  <div class="modalBack" id="modalBack" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal">
+      <div class="modalHead">
+        <b id="modalTitle">Eintrag existiert bereits</b>
+      </div>
+      <div class="modalBody" id="modalBody"></div>
+      <div class="modalActions">
+        <button class="btnSecondary" id="cancelOverwrite">Abbrechen</button>
+        <button class="btnPrimary" id="confirmOverwrite">Überschreiben</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  /**
+   * CLOUD SETUP (Google Sheet / Apps Script)
+   * 1) In Google Drive ein Sheet anlegen: Tab "entries" mit Header: date | player | score | ts
+   * 2) Apps Script als Web App deployen (anonym zulassen) und URL hier eintragen.
+   */
+  const CLOUD_URL = ""; // <- HIER eintragen: https://script.google.com/macros/s/XXXX/exec
+  const CLOUD_KEY = ""; // <- optional: irgendein Kennwort, muss im Script identisch sein
+
+  const LS_KEY = "woerdle_v2_entries";
+  let entries = loadLocal(); // [{date, player, score, ts}]
+
+  const $ = (id)=>document.getElementById(id);
+
+  const dateEl = $("date");
+  const playerEl = $("player");
+  const scoreEl = $("score");
+
+  const saveBtn = $("saveBtn");
+  const syncBtn = $("syncBtn");
+  const exportBtn = $("exportBtn");
+  const resetBtn = $("resetBtn");
+
+  const modalBack = $("modalBack");
+  const modalBody = $("modalBody");
+  const modalTitle = $("modalTitle");
+  const cancelOverwrite = $("cancelOverwrite");
+  const confirmOverwrite = $("confirmOverwrite");
+
+  const tableBody = $("tableBody");
+  const emptyMsg = $("emptyMsg");
+
+  const linaTotal = $("linaTotal");
+  const papaTotal = $("papaTotal");
+  const linaCount = $("linaCount");
+  const papaCount = $("papaCount");
+  const leaderLine = $("leaderLine");
+  const todayPill = $("todayPill");
+  const lastSaved = $("lastSaved");
+  const kpis = $("kpis");
+  const toast = $("toast");
+
+  const cloudText = $("cloudText");
+  const cloudDot = $("cloudDot");
+
+  const today = new Date();
+  const todayStr = toISODate(today);
+  dateEl.value = todayStr;
+  todayPill.textContent = "Heute: " + prettyDate(todayStr);
+
+  let pending = null; // {date, player, score}
+
+  saveBtn.addEventListener("click", onSave);
+  syncBtn.addEventListener("click", ()=> syncCloud(true));
+  exportBtn.addEventListener("click", onExport);
+  resetBtn.addEventListener("click", onReset);
+
+  cancelOverwrite.addEventListener("click", closeModal);
+  modalBack.addEventListener("click", (e)=>{ if(e.target === modalBack) closeModal(); });
+
+  confirmOverwrite.addEventListener("click", async ()=>{
+    if(!pending) return closeModal();
+    upsertLocal(pending.date, pending.player, pending.score, true);
+    closeModal();
+    render();
+    flash("Eintrag überschrieben ✅");
+    pending = null;
+    // try to sync that change (best-effort)
+    await pushSingleToCloud(pendingLastChange());
+  });
+
+  dateEl.addEventListener("change", ()=>{
+    const v = dateEl.value;
+    if(v) todayPill.textContent = (v === todayStr ? "Heute: " : "Datum: ") + prettyDate(v);
+  });
+
+  render();
+  initCloud();
+
+  async function initCloud(){
+    if(!CLOUD_URL){
+      setCloudStatus("nicht verbunden (URL fehlt)", "warn");
+      return;
+    }
+    await syncCloud(false);
+  }
+
+  function onSave(){
+    const date = dateEl.value;
+    const player = playerEl.value;
+    const score = parseInt(scoreEl.value, 10);
+
+    if(!date){ flash("Bitte ein Datum wählen."); return; }
+    if(!(score>=1 && score<=7)){ flash("Bitte ein gültiges Ergebnis wählen."); return; }
+
+    const idx = entries.findIndex(e => e.date === date && e.player === player);
+    if(idx !== -1){
+      const old = entries[idx];
+      pending = { date, player, score };
+      modalTitle.textContent = "Eintrag existiert bereits";
+      modalBody.innerHTML =
+        `Für <span class="strong">${prettyDate(date)}</span> gibt es bereits einen Eintrag für <span class="strong">${player}</span>.<br><br>` +
+        `Alt: <span class="strong">${old.score}</span> &nbsp;&nbsp; Neu: <span class="strong">${score}</span><br><br>` +
+        `Möchtest du überschreiben?`;
+      openModal();
+      return;
+    }
+
+    upsertLocal(date, player, score, false);
+    render();
+    flash("Gespeichert ✅");
+    // best-effort cloud push
+    pushSingleToCloud({date, player, score}).catch(()=>{});
+  }
+
+  function pendingLastChange(){
+    // last changed entry is the one with max ts
+    const last = [...entries].sort((a,b)=> (b.ts||0) - (a.ts||0))[0];
+    if(!last) return null;
+    return {date:last.date, player:last.player, score:last.score};
+  }
+
+  function upsertLocal(date, player, score, overwrite){
+    const now = Date.now();
+    const idx = entries.findIndex(e => e.date === date && e.player === player);
+    if(idx !== -1){
+      if(overwrite) entries[idx] = { date, player, score, ts: now };
+    } else {
+      entries.push({ date, player, score, ts: now });
+    }
+    persistLocal();
+    lastSaved.textContent = "Letzte Änderung: " + new Date(now).toLocaleString("de-DE");
+  }
+
+  async function syncCloud(showToast){
+    if(!CLOUD_URL){
+      setCloudStatus("nicht verbunden (URL fehlt)", "warn");
+      if(showToast) flash("Cloud URL fehlt - erst eintragen.");
+      return;
+    }
+
+    setCloudStatus("synchronisiert...", "warn");
+    try{
+      // 1) pull
+      const pulled = await cloudList();
+      // 2) merge strategy: cloud wins (single source of truth), keep local as cache
+      entries = sanitizeEntries(pulled);
+      persistLocal();
+      render();
+      setCloudStatus("verbunden", "ok");
+      if(showToast) flash("Cloud synchronisiert ✅");
+    } catch(err){
+      console.error(err);
+      setCloudStatus("Fehler", "bad");
+      if(showToast) flash("Cloud Sync fehlgeschlagen ❌");
+    }
+  }
+
+  async function pushSingleToCloud(item){
+    if(!item || !CLOUD_URL) return;
+    try{
+      await cloudUpsert(item);
+      setCloudStatus("verbunden", "ok");
+    }catch(_){
+      setCloudStatus("offline - lokal gespeichert", "warn");
+    }
+  }
+
+  function setCloudStatus(text, state){
+    cloudText.textContent = "Cloud: " + text;
+    cloudDot.className = "cloudStatusDot " + (state==="ok" ? "dotOk" : state==="bad" ? "dotBad" : "dotWarn");
+  }
+
+  async function cloudList(){
+    const url = CLOUD_URL + "?action=list" + (CLOUD_KEY ? "&key="+encodeURIComponent(CLOUD_KEY) : "") + "&_=" + Date.now();
+    const res = await fetch(url, {method:"GET"});
+    if(!res.ok) throw new Error("Cloud list failed: " + res.status);
+    const data = await res.json();
+    if(!data || !Array.isArray(data.entries)) throw new Error("Cloud response invalid");
+    return data.entries;
+  }
+
+  async function cloudUpsert(item){
+    const payload = {
+      action: "upsert",
+      key: CLOUD_KEY || "",
+      entry: { date: item.date, player: item.player, score: item.score }
+    };
+    const res = await fetch(CLOUD_URL, {
+      method:"POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify(payload)
+    });
+    if(!res.ok) throw new Error("Cloud upsert failed: " + res.status);
+    // optional: parse json
+    return true;
+  }
+
+  function sanitizeEntries(arr){
+    const out = [];
+    for(const e of (Array.isArray(arr)?arr:[])){
+      if(!e) continue;
+      if(typeof e.date !== "string") continue;
+      if(e.player !== "Lina" && e.player !== "Papa") continue;
+      const s = Number(e.score);
+      if(!(s>=1 && s<=7)) continue;
+      out.push({date:e.date, player:e.player, score:s, ts: typeof e.ts === "number" ? e.ts : 0});
+    }
+    // ensure uniqueness by date+player (cloud should already do it)
+    const map = new Map();
+    for(const e of out){
+      map.set(e.date + "|" + e.player, e);
+    }
+    return Array.from(map.values());
+  }
+
+  function onExport(){
+    const rows = [["date","player","score"]];
+    const sorted = [...entries].sort((a,b)=>a.date.localeCompare(b.date) || a.player.localeCompare(b.player));
+    for(const e of sorted) rows.push([e.date, e.player, String(e.score)]);
+    const csv = rows.map(r => r.map(v => `"${String(v).replaceAll('"','""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], {type:"text/csv;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "woerdle_lina_papa.csv";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    flash("CSV exportiert 📄");
+  }
+
+  function onReset(){
+    const ok = confirm("Wirklich ALLE Einträge löschen? Lokal wird alles gelöscht. (Cloud bleibt, wenn du nicht extra dort löschst.)");
+    if(!ok) return;
+    entries = [];
+    persistLocal();
+    render();
+    flash("Lokal gelöscht 🗑️");
+    setCloudStatus("offline - lokal leer", "warn");
+  }
+
+  function render(){
+    const lina = entries.filter(e=>e.player==="Lina");
+    const papa = entries.filter(e=>e.player==="Papa");
+
+    const linaSum = lina.reduce((s,e)=>s+e.score,0);
+    const papaSum = papa.reduce((s,e)=>s+e.score,0);
+
+    linaTotal.textContent = linaSum;
+    papaTotal.textContent = papaSum;
+
+    linaCount.textContent = `${lina.length} Tage`;
+    papaCount.textContent = `${papa.length} Tage`;
+
+    if(entries.length === 0){
+      leaderLine.textContent = "Noch keine Einträge.";
+    } else if(linaSum < papaSum){
+      leaderLine.innerHTML = `Aktuell vorne: <b>Lina</b> (niedrigere Summe ist besser)`;
+    } else if(papaSum < linaSum){
+      leaderLine.innerHTML = `Aktuell vorne: <b>Papa</b> (niedrigere Summe ist besser)`;
+    } else {
+      leaderLine.innerHTML = `Aktuell: <b>Gleichstand</b>`;
+    }
+
+    const map = new Map();
+    for(const e of entries){
+      if(!map.has(e.date)) map.set(e.date, {});
+      map.get(e.date)[e.player] = e.score;
+    }
+
+    const dates = Array.from(map.keys()).sort((a,b)=>b.localeCompare(a));
+    tableBody.innerHTML = "";
+    emptyMsg.textContent = dates.length ? "" : "Noch keine Daten - starte mit dem ersten Tages-Eintrag 🙂";
+
+    for(const d of dates){
+      const o = map.get(d) || {};
+      const tr = document.createElement("tr");
+
+      const tdDate = document.createElement("td");
+      tdDate.textContent = prettyDate(d);
+      tr.appendChild(tdDate);
+
+      tr.appendChild(scoreCell(o.Lina));
+      tr.appendChild(scoreCell(o.Papa));
+
+      tableBody.appendChild(tr);
+    }
+
+    const bothDays = dates.filter(d=>{
+      const o = map.get(d)||{};
+      return typeof o.Lina === "number" && typeof o.Papa === "number";
+    }).length;
+
+    const failLina = lina.filter(e=>e.score===7).length;
+    const failPapa = papa.filter(e=>e.score===7).length;
+
+    const avgLina = lina.length ? (linaSum / lina.length).toFixed(2).replace(".",",") : "0,00";
+    const avgPapa = papa.length ? (papaSum / papa.length).toFixed(2).replace(".",",") : "0,00";
+
+    kpis.innerHTML = "";
+    kpis.appendChild(kpi(`Gemeinsame Tage: ${bothDays}`));
+    kpis.appendChild(kpi(`Ø Lina: ${avgLina}`));
+    kpis.appendChild(kpi(`Ø Papa: ${avgPapa}`));
+    kpis.appendChild(kpi(`7er Lina: ${failLina}`));
+    kpis.appendChild(kpi(`7er Papa: ${failPapa}`));
+  }
+
+  function scoreCell(val){
+    const td = document.createElement("td");
+    td.className = "tdCenter";
+    if(typeof val !== "number"){
+      td.innerHTML = `<span style="color:#9ca3af">-</span>`;
+      return td;
+    }
+    const span = document.createElement("span");
+    span.className = "badge " + (val===7 ? "fail" : "ok");
+    span.textContent = String(val);
+    td.appendChild(span);
+    return td;
+  }
+
+  function kpi(text){
+    const d = document.createElement("div");
+    d.className = "kpi";
+    d.textContent = text;
+    return d;
+  }
+
+  function openModal(){ modalBack.style.display = "flex"; modalBack.setAttribute("aria-hidden","false"); }
+  function closeModal(){ modalBack.style.display = "none"; modalBack.setAttribute("aria-hidden","true"); }
+
+  function flash(msg){
+    toast.textContent = msg;
+    toast.style.display = "block";
+    clearTimeout(flash._t);
+    flash._t = setTimeout(()=>toast.style.display="none", 1800);
+  }
+
+  function persistLocal(){ localStorage.setItem(LS_KEY, JSON.stringify(entries)); }
+  function loadLocal(){
+    try{
+      const raw = localStorage.getItem(LS_KEY);
+      if(!raw) return [];
+      const parsed = JSON.parse(raw);
+      return sanitizeEntries(parsed);
+    }catch(_){ return []; }
+  }
+
+  function toISODate(d){
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,"0");
+    const day = String(d.getDate()).padStart(2,"0");
+    return `${y}-${m}-${day}`;
+  }
+  function prettyDate(iso){
+    const [y,m,d] = iso.split("-");
+    return `${d}.${m}.${y}`;
+  }
+})();
+</script>
+</body>
+</html>
