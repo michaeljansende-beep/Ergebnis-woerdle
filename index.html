@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Wördle – Lina vs. Papa</title>
+<style>
+body{font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;margin:0;padding:20px;background:#fff;color:#111}
+h1{margin-bottom:4px}
+.subtitle{color:#555;margin-bottom:20px}
+.grid{display:grid;grid-template-columns:1fr;gap:20px}
+@media(min-width:900px){.grid{grid-template-columns:1fr 1fr}}
+.card{background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:16px}
+label{display:block;font-size:13px;margin-top:10px}
+input,select{width:100%;padding:10px;margin-top:4px;border-radius:8px;border:1px solid #e5e7eb;font-size:16px}
+.btn{width:100%;padding:12px;margin-top:12px;border-radius:10px;font-size:16px;cursor:pointer;border:1px solid #e5e7eb;background:#fff}
+.btn.primary{background:#f59e0b;color:#fff;border:none;font-weight:600}
+.btn.danger{color:#b91c1c;border-color:#fca5a5;background:#fff}
+.status{margin-top:10px;font-size:14px}
+table{width:100%;border-collapse:collapse;margin-top:10px}
+th,td{border-bottom:1px solid #e5e7eb;padding:8px;text-align:center}
+th{text-align:left;font-size:13px;color:#555}
+.sum{display:flex;gap:12px;margin-top:12px}
+.sum div{flex:1;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:10px;text-align:center}
+</style>
+</head>
+<body>
+
+<h1>Wördle – Lina vs. Papa</h1>
+<div class="subtitle">1–6 Versuche · 7 = nicht geschafft · Geräteübergreifend via Google Sheet</div>
+
+<div class="grid">
+<div class="card">
+<h2>Eintrag</h2>
+<label>Datum</label>
+<input type="date" id="date">
+<label>Spieler</label>
+<select id="player"><option>Lina</option><option>Papa</option></select>
+<label>Ergebnis</label>
+<select id="score">
+<option value="1">1</option><option value="2">2</option><option value="3">3</option>
+<option value="4">4</option><option value="5">5</option><option value="6">6</option>
+<option value="7">7 (nicht geschafft)</option>
+</select>
+<button class="btn primary">Speichern & Cloud</button>
+<button class="btn danger">Alles löschen</button>
+</div>
+
+<div class="card">
+<h2>Übersicht</h2>
+<table>
+<thead><tr><th>Datum</th><th>Lina</th><th>Papa</th></tr></thead>
+<tbody id="rows"></tbody>
+</table>
+<div class="sum">
+<div><strong>Lina – Summe</strong><br>0</div>
+<div><strong>Papa – Summe</strong><br>0</div>
+</div>
+</div>
+</div>
+
+</body>
+</html>
