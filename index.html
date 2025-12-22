@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wördle</title>
+
+  <style>
+    :root{
+      --green:#1f8f4a;
+      --bg:#0f1115;
+      --card:#151922;
+      --text:#e9edf5;
+      --muted:#a9b1c3;
+      --line:rgba(255,255,255,.08);
+      --shadow:0 12px 30px rgba(0,0,0,.35);
+      --radius:16px;
+      --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:var(--font);
+      background:var(--bg);
+      color:var(--text);
+    }
+    .wrap{max-width:900px;margin:0 auto;padding:18px 14px 28px}
+    h1{margin:0 0 4px 0}
+    .sub{color:var(--muted);font-size:12px;margin-bottom:12px}
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:12px;
+    }
+    table{width:100%;border-collapse:collapse}
+    th,td{
+      border-bottom:1px solid var(--line);
+      padding:8px;
+      font-size:14px;
+    }
+    th{color:var(--muted);font-size:12px;text-align:left}
+    .footer-link{
+      text-align:center;
+      margin-top:12px;
+    }
+    .footer-link a{
+      font-size:11px;
+      color:#9aa3b6;
+      text-decoration:none;
+    }
+    .footer-link a:hover{color:#fff;text-decoration:underline}
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <h1>Wördle</h1>
+    <div class="sub">Daten aus Google Sheet (CSV)</div>
+
+    <div class="card">
+      <table id="table">
+        <thead><tr id="thead"></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+
+      <div class="footer-link">
+        <a href="https://docs.google.com/spreadsheets/d/1ytod7wRvaxWMS5-afZ2YBWe9h5l2ms6GSqqJSILhSE0/edit?usp=drivesdk"
+           target="_blank" rel="noopener">
+          Daten korrigieren
+        </a>
+      </div>
+    </div>
+  </div>
+
+<script>
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSEjpKNfGDzEfrYw0QicDiJsj7KZwH_IDjaVVGhK_PpE5X-JvfwaPfXJYAkecOS21WMjeCRwBzWqiEB/pub?gid=1396043929&single=true&output=csv";
+
+function parseCSV(text){
+  return text.trim().split("\n").map(r=>r.split(","));
+}
+
+async function load(){
+  const res = await fetch(CSV_URL,{cache:"no-store"});
+  const text = await res.text();
+  const rows = parseCSV(text);
+  const head = rows.shift();
+
+  document.getElementById("thead").innerHTML =
+    head.map(h=>`<th>${h}</th>`).join("");
+
+  document.getElementById("tbody").innerHTML =
+    rows.map(r=>"<tr>"+r.map(c=>`<td>${c}</td>`).join("")+"</tr>").join("");
+}
+load();
+</script>
+</body>
+</html>
